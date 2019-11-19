@@ -35,7 +35,7 @@ TCPManager - управляет множеством узлов управлен
 
 ### JmxClient - ru.transset.app.jmx.JmxClient
 
-JmxClient - контролирует метрики узла кластера Kafak
+JmxClient - контролирует метрики узла кластера Kafka
 
 ### JmxObject - ru.transset.app.jmx.JmxObject
 
