@@ -52,3 +52,8 @@ JmxKafkaCluster - контролирует состояние кластера K
 ### JmxKafka - ru.transset.kafka.jmx.JmxKafka
 
 JmxKafka - управляет геораспределенными кластерами Kafka на основании мониторинга их состояния
+
+
+## Конфигурация кластерного приложения
+
+Пример конфирурации узла кластерного приложения TcpSwitch - [avalanche-tcpswitch-config.xml](conf/avalanche-tcpswitch-config.xml)
