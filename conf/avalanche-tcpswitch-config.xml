@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<avalanche name="TcpSwitch"
+           description="TCP/IP переключатель между кластерами Karka при георезервировании" >
+
+	<!-- Определение файлов локализации приложения                                            -->
+	<locale name="ru.transset.app.tcpswitch.LocaleStrings" />
+	<locale name="ru.transset.kafka.jmx.LocaleStrings" />
+
+	<!-- Определение интерфесов. Для каждого удаленного экземпляра этого приложения           -->
+	<!-- должен быть определен свой интерфейс                                                 -->
+	<!-- Определение HTTP интерфеса для ЦОД-Y                                                 -->
+	<interface name="http" uri="http://YYY.YYY.YYY.YYY:8080/tcpswitch/connector/http-connector" />
+	
+	<!-- ==================================================================================== -->
+	<!-- Секции конфигурации, которые должены быть одинаково определены на всех узлах         -->
+	<!-- кластера                                                                             -->
+	<!-- ==================================================================================== -->
+
+	<!-- Определение групп туннелей для разных ЦОД-ов. В единицу времени может быть активна   -->
+	<!-- только одна или ни одной группа туннелей                                             -->
+	<!-- Определение группы туннелей для кластера Karka в ЦОД-X                               -->
+	<!--   size     - размер буфера обмена в байтах, по умолчанию 4096                        -->
+	<!--   host     - имя хоста TcpSwitch-а, по умолчанию - имя, определенное в ОС            -->
+	<!--   logger   - имя логгера в файле конфигурации log4j, по умолчанию вывод              -->
+	<!--              осуществляется в root логгер                                            -->
+	<function class="ru.transset.tcp.TunnelFunction" name="COD-X" size="4096" logger="kafka"
+	          description="Кластер kafra в ЦОД-X">
+		<!--   type     - тип туннеля, значения по умолчанию не имеет. Для туннелей Kafka     -->
+		<!--              необходимо указать значение kafka                                   -->
+		<tunnel class="ru.transset.tcp.Tunnel" name="kafka-node-1" type="kafka" port="9092" remote="XXX.XXX.XXX.XX1:9092" />
+		<tunnel class="ru.transset.tcp.Tunnel" name="kafka-node-2" type="kafka" port="9093" remote="XXX.XXX.XXX.XX2:9092" />
+		<tunnel class="ru.transset.tcp.Tunnel" name="kafka-node-3" type="kafka" port="9094" remote="XXX.XXX.XXX.XX3:9092" />
+	</function>
+	 
+	<!-- Определение группы туннелей для кластера Karka в ЦОД-Y                               -->
+	<!--   size     - размер буфера обмена в байтах, по умолчанию 10240                       -->
+	<!--   host     - имя хоста TcpSwitch-а, по умолчанию - имя, определенное в ОС            -->
+	<!--   logger   - имя логгера в файле конфигурации log4j, по умолчанию вывод              -->
+	<!--              осуществляется в root логгер                                            -->
+	<function class="ru.transset.tcp.TunnelFunction" name="COD-Y" size="4096" logger="kafka"
+	          description="Кластер kafra в ЦОД-Y">
+		<!--   type     - тип туннеля, значения по умолчанию не имеет. Для туннелей Kafka     -->
+		<!--              необходимо указать значение kafka                                   -->
+		<tunnel class="ru.transset.tcp.Tunnel" name="kafka-node-1" type="kafka" port="9092" remote="YYY.YYY.YYY.YY1:9092" />
+		<tunnel class="ru.transset.tcp.Tunnel" name="kafka-node-2" type="kafka" port="9093" remote="YYY.YYY.YYY.YY2:9092" />
+		<tunnel class="ru.transset.tcp.Tunnel" name="kafka-node-3" type="kafka" port="9094" remote="YYY.YYY.YYY.YY3:9092" />
+	</function>
+	 
+	<!-- Функция управления группами туннелей                                                 -->
+	<!--   logger   - имя логгера в файле конфигурации log4j, по умолчанию вывод              -->
+	<!--              осуществляется в root логгер                                            -->
+	<function class="ru.transset.app.tcpswitch.TCPSwitch" name="Switch"
+	          description="Переключатель групп TCP туннелей">
+		<adapter class="ru.transset.app.tcpswitch.TCPAdapter" name="KafkaXXX" uri="COD-X"/>
+		<adapter class="ru.transset.app.tcpswitch.TCPAdapter" name="KafkaYYY" uri="COD-Y"/>
+	</function>
+	
+	<!-- ==================================================================================== -->
+	<!-- Секции конфигурации, имеющие различия в именах объектов кластера                     -->
+	<!-- ==================================================================================== -->
+
+	<!-- Управление группой узлов переключателей туннелей                                     -->
+	<!--   wait     - время ожидания инициализации приложения в секундах, по                  -->
+	<!--              умолчанию - 5, необходимо для ожидания инициализации соединений с       -->
+	<!--              удаленными узлами                                                       -->
+	<!--   group    - имя группу, запускаемой по умолчанию                                    -->
+	<!--   local    - имя адаптера локальной функции управления группами туннелей             -->
+	<!--              (SwitchXXX). При старте узла, если уже обнаружены другие активные       -->
+	<!--              узлы, запускается только группа туннелей на этом узле                   -->
+	<!--   logger   - имя логгера в файле конфигурации log4j, по умолчанию вывод              -->
+	<!--              осуществляется в root логгер                                            -->
+	<function class="ru.transset.app.tcpswitch.TCPNode" name="Node"
+    	      description="Переключатель групп TCP туннелей кластеров Kafka"
+        	  wait="5" group="KafkaXXX" >
+    	<!-- Адаптер локальной функции управления группами туннелей должен быть указан            -->
+    	<!-- первым в группе адаптеров или должен быть определен атрибут "local" в секции         -->
+    	<!-- <application>/<function>                                                             --> 
+    	<!-- Локальная функция управления группами туннелей (этот узел)                           -->
+		<adapter class="ru.transset.app.tcpswitch.TCPSwitchAdapter" name="SwitchXXX" uri="Switch" />
+    	<!-- Удаленная функция управления группами туннелей (узел в другом ЦОД)                   -->
+		<adapter class="ru.transset.app.tcpswitch.TCPSwitchAdapter" name="SwitchYYY" uri="http/Switch" />
+	</function>
+	
+	<!-- Управление множеством групп узлов переключателей туннелей                            -->
+	<!--   logger   - имя логгера в файле конфигурации log4j, по умолчанию вывод              -->
+	<!--              осуществляется в root логгер                                            -->
+	<application class="ru.transset.app.tcpswitch.TCPManager" name="Manager"
+	             description="Приложение управления группами TCP туннелей" >
+		<!-- Адаптер группы узлов переключателей туннелей kafka (этот узел)               -->
+		<adapter class="ru.transset.app.tcpswitch.TCPNodeAdapter" name="NodeXXX" uri="Node" />
+	</application>
+
+	<!-- ==================================================================================== -->
+	<!-- Секция конфигурации контроля состояния кластеров Kafka                               -->
+	<!-- ==================================================================================== -->
+
+	<!-- JMX монитор состояния кластеров Kafka, обеспечивающий переключение на исправный      -->
+	<!-- кластер                                                                              -->
+	<!--   wait     - время между опросами состояния кластеров Kafka в миллисекундах, по      -->
+	<!--              умолчанию - 30000                                                       -->
+	<!--   time     - время ожидания поиска главного узла JmxKafka до переключения этого узла -->
+	<!--              в статус главного в миллисекундах, по молчанию - 300000                 -->
+	<!--   function - признак функции, при установке значения true это приложение             -->
+	<!--              регистрируется в списке функций (необходимо для обеспечения             -->
+	<!--              удаленных вызовов методов этого экземпляра)                             -->
+	<!--   logger   - имя логгера в файле конфигурации log4j, по умолчанию вывод              -->
+	<!--              осуществляется в root логгер                                            -->
+	<application class="ru.transset.kafka.jmx.JmxKafka" name="JmxKafka" function="true" wait="30000"
+	             description="Монитор работоспособности кластеров Kafka" >
+		<!-- Адаптер локальной группы узлов переключателей туннелей kafka                     -->
+		<adapter class="ru.transset.app.tcpswitch.TCPNodeAdapter" name="node" uri="Node" />
+
+		<!-- Адаптеры удаленных экземпляров JmxKafka                                          -->
+		<adapter class="ru.transset.kafka.jmx.JmxKafkaAdapter" name="JmxNodeEK" uri="http/JmxKafka" />
+
+		<!-- JMX монитор кластера Kafka                                                       -->
+		<!--   name     - имя кластера, значение должно совпадать с именем адаптера экземпляра-->
+		<!--              функции управления группами туннелей (TcpSwitch).                   -->
+		<!--   wait     - время между опросами состояния узлов кластера Kafka в миллисекундах,-->
+		<!--              по умолчанию - 30000                                                -->
+		<cluster class="ru.transset.kafka.jmx.JmxKafkaCluster" name="KafkaXXX" wait="30000"
+			 description="JMX монитор кластера Kafka XXX ЦОД">
+ 		   	<!-- JMX монитор узла кластера Kafka                                          -->
+			<!--   name     - имя монитора узла кластера                                  -->
+			<!--   url      - адрес узла кластера Kafka и порт JMX сервера                -->
+			<!--   wait     - время между опросами состояния узла кластера Kafka в        -->
+			<!--              миллисекундах, по умолчанию - 5000                          -->
+			<client class="ru.transset.app.jmx.JmxClient" name="jmx-kafka-node-1" url="XXX.XXX.XXX.XX1:PPPPP" wait="5000" />	          
+			<client class="ru.transset.app.jmx.JmxClient" name="jmx-kafka-node-2" url="XXX.XXX.XXX.XX2:PPPPP" wait="5000" />	          
+			<client class="ru.transset.app.jmx.JmxClient" name="jmx-kafka-node-3" url="XXX.XXX.XXX.XX3:PPPPP" wait="5000" />	          
+
+ 		   	<!-- Метрики монитора узла кластера Kafka                                     -->
+			<!--   name       - имя метрики                                               -->
+			<!--   attributes - список имен атрибутов метрики, имена разделяются запятой  -->
+			<metric class="ru.transset.app.jmx.JmxObject" name="kafka.server:type=KafkaServer,name=BrokerState" attributes="Value" />	          
+
+ 		   	<!-- Контроль значений атрибутов метрик                                       -->
+ 		   	<!-- Контроль значений атрибутов метрики BrokerStatus на достижение порога    -->
+ 		   	<!-- срабатывания                                                             -->
+			<!--   name       - имя метрики                                               -->
+			<!--   threshold  - допустимое время не нахождения значение атрибута Value вне-->
+			<!--              - значении 3 (RunningBroker) в миллисекундах, по умолчанию  -->
+			<!--              - 300000 миллисекунд                                        -->
+			<threshold class="ru.transset.kafka.jmx.threshold.KafkaBrokerStatus" name="kafka.server:type=KafkaServer,name=BrokerState"
+			           threshold="300000" />	          
+		
+		</cluster>
+
+	    	<!-- JMX монитор кластера Kafka                                                       -->
+		<!--   name     - имя кластера, значение должно совпадать с именем адаптера экземпляра-->
+		<!--              функции управления группами туннелей (TcpSwitch).                   -->
+		<!--   wait     - время между опросами состояния узлов кластера Kafka в миллисекундах,-->
+		<!--              по умолчанию - 30000                                                -->
+		<cluster class="ru.transset.kafka.jmx.JmxKafkaCluster" name="KafkaYYY"
+	    		 description="JMX монитор кластера Kafka YYY ЦОД">
+ 		   	<!-- JMX монитор узла кластера Kafka                                          -->
+			<!--   name     - имя монитора узла кластера                                  -->
+			<!--   url      - адрес узла кластера Kafka и порт JMX сервера                -->
+			<!--   wait     - время между опросами состояния узла кластера Kafka в        -->
+			<!--              миллисекундах, по умолчанию - 5000                          -->
+			<client class="ru.transset.app.jmx.JmxClient" name="jmx-kafka-node-1" url="YYY.YYY.YYY.YY1:PPPPP" wait="5000" />	          
+			<client class="ru.transset.app.jmx.JmxClient" name="jmx-kafka-node-2" url="YYY.YYY.YYY.YY2:PPPPP" wait="5000" />	          
+			<client class="ru.transset.app.jmx.JmxClient" name="jmx-kafka-node-3" url="YYY.YYY.YYY.YY3:PPPPP" wait="5000" />	          
+		
+ 		   	<!-- Метрики монитора узла кластера Kafka                                     -->
+ 			<!--   name       - имя метрики                                               -->
+			<!--   attributes - список имен атрибутов метрики, имена разделяются запятой  -->
+			<metric class="ru.transset.app.jmx.JmxObject" name="kafka.server:type=KafkaServer,name=BrokerState" attributes="Value" />	          
+
+ 		   	<!-- Контроль значений атрибутов метрик                                       -->
+ 		   	<!-- Контроль значений атрибутов метрики BrokerStatus на достижение порога    -->
+ 		   	<!-- срабатывания                                                             -->
+			<!--   name       - имя метрики                                               -->
+			<!--   threshold  - допустимое время не нахождения значение атрибута Value вне-->
+			<!--              - значении 3 (RunningBroker) в миллисекундах, по умолчанию  -->
+			<!--              - 300000 миллисекунд                                        -->
+			<threshold class="ru.transset.kafka.jmx.threshold.KafkaBrokerStatus" name="kafka.server:type=KafkaServer,name=BrokerState"
+			           threshold="300000" />	          
+		
+		</cluster>
+		
+	</application>
+
+	<!-- ==================================================================================== -->
+	
+	<!-- Определение HTTP коннектора, обеспечивает доступ к локальным функциям с              -->
+	<!-- удаленных узлов приложения                                                           -->
+	<connector class="HTTPConnector" name="http-connector" >
+		<!-- Публикация функции управления группами туннелей в этом коннекторе            -->
+		<publish name="Switch" function="Switch" />
+  		<!-- Публикация функции JMX монитор состояния кластеров Kafka                     -->
+		<publish name="JmxKafka" function="JmxKafka" />
+	</connector>
+	
+</avalanche>
