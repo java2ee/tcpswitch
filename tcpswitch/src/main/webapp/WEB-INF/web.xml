@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://xmlns.jcp.org/xml/ns/javaee" xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee/web-app_3_1.xsd" version="3.1">
+
+  <display-name>TCP/IP Switch for Kafra</display-name>
+
+  <welcome-file-list>
+    <welcome-file>index.html</welcome-file>
+    <welcome-file>index.htm</welcome-file>
+    <welcome-file>index.jsp</welcome-file>
+    <welcome-file>default.html</welcome-file>
+    <welcome-file>default.htm</welcome-file>
+    <welcome-file>default.jsp</welcome-file>
+  </welcome-file-list>
+
+  <servlet>
+    <display-name>AvalancheServlet</display-name>
+    <servlet-name>AvalancheServlet</servlet-name>
+    <servlet-class>ru.funsys.servlet.http.AvalancheServlet</servlet-class>
+    <init-param>
+      <param-name>avalanche.config</param-name>
+      <param-value>${catalina.base}/conf/avalanche-tcpswitch-config.xml</param-value>
+    </init-param>
+    <init-param>
+      <param-name>avalanche.log4j</param-name>
+      <param-value>${catalina.base}/conf/avalanche-tcpswitch-log4j.xml</param-value>
+    </init-param>
+    <init-param>
+      <param-name>avalanche.jndi</param-name>
+      <param-value>avalanche/tcp</param-value>
+    </init-param>
+    <load-on-startup>1</load-on-startup>
+    <multipart-config>
+      <!-- 50MB max -->
+      <max-file-size>52428800</max-file-size>
+      <max-request-size>52428800</max-request-size>
+      <file-size-threshold>0</file-size-threshold>
+    </multipart-config>
+  </servlet>
+
+  <servlet-mapping>
+    <servlet-name>AvalancheServlet</servlet-name>
+    <url-pattern>/connector/*</url-pattern>
+  </servlet-mapping>
+
+  <login-config>
+    <auth-method>BASIC</auth-method>
+    <realm-name>Tomcat Manager Application</realm-name>
+  </login-config>
+
+  <security-role>
+    <description>
+      Роль управления переключениями группами туннелей
+    </description>
+    <role-name>tcpswitch</role-name>
+  </security-role>
+
+  <security-constraint>
+    <web-resource-collection>
+      <web-resource-name>Manager</web-resource-name>
+      <url-pattern>/index.jsp</url-pattern>
+    </web-resource-collection>
+    <auth-constraint>
+      <role-name>tcpswitch</role-name>
+    </auth-constraint>
+  </security-constraint>
+  
+</web-app>
